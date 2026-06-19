@@ -112,8 +112,8 @@ class Program
             client.Timeout = TimeSpan.FromSeconds(60);
         });
 
-        // Register DeliveryService
-        services.AddSingleton<IDeliveryService, DeliveryService>();
+        // Register DeliveryService with HttpClient
+        services.AddHttpClient<IDeliveryService, DeliveryService>();
 
         return services.BuildServiceProvider();
     }

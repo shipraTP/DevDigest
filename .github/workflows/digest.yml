@@ -36,6 +36,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          GRAPH_CLIENT_ID: ${{ secrets.GRAPH_CLIENT_ID }}
         run: |
           cat > src/DevDigest.App/appsettings.json << EOF
           {
@@ -77,6 +78,9 @@ jobs:
             "OpenAI": {
               "ApiKey": "$OPENAI_API_KEY",
               "Model": "gpt-4o-mini"
+            },
+            "Graph": {
+              "ClientId": "$GRAPH_CLIENT_ID"
             },
             "Email": {
               "SmtpHost": "smtp.office365.com",
