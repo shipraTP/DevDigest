@@ -6,7 +6,7 @@ A .NET 8 Console Application that generates and delivers a daily developer newsl
 
 - **Feed Aggregation**: Fetches content from RSS/Atom feeds using `System.ServiceModel.Syndication`
 - **Hacker News Integration**: Pulls top stories from the Hacker News Firebase API
-- **AI-Powered Summarization**: Uses Anthropic's Claude API to generate concise 5-bullet summaries per category
+- **AI-Powered Summarization**: Uses OpenAI's GPT API to generate concise 5-bullet summaries per category
 - **Email Delivery**: Sends beautifully formatted HTML emails using MailKit
 - **GitHub Actions CI/CD**: Scheduled daily runs at 7 AM IST (1:30 AM UTC)
 
@@ -35,7 +35,7 @@ DevDigest/
 ## Prerequisites
 
 - .NET 8 SDK
-- Anthropic API Key (for AI summarization)
+- OpenAI API Key (for AI summarization) - Free tier available
 - SMTP credentials (for email delivery)
 
 ## Configuration
@@ -58,8 +58,9 @@ Edit `appsettings.json` with your settings:
       }
     ]
   },
-  "Anthropic": {
-    "ApiKey": "your-anthropic-api-key"
+  "OpenAI": {
+    "ApiKey": "your-openai-api-key",
+    "Model": "gpt-4o-mini"
   },
   "Email": {
     "SmtpHost": "smtp.gmail.com",
@@ -72,14 +73,17 @@ Edit `appsettings.json` with your settings:
 
 ### Getting API Keys
 
-**Anthropic API Key:**
-1. Sign up at [Anthropic Console](https://console.anthropic.com/)
-2. Navigate to API Keys section
-3. Create a new API key
+**OpenAI API Key (Free Tier Available):**
+1. Sign up at [OpenAI Platform](https://platform.openai.com/)
+2. Go to API Keys section (https://platform.openai.com/api-keys)
+3. Click "Create new secret key"
+4. Copy the key and add it as a GitHub Secret
+
+**Note:** OpenAI offers $5 free credits for new users. The app uses `gpt-4o-mini` which is very affordable (~$0.075/1M tokens).
 
 **Gmail App Password (for SMTP):**
 1. Enable 2-Factor Authentication on your Google Account
-2. Go to Security → App Passwords
+2. Go to Security > App Passwords
 3. Generate a new app password for "Mail"
 4. Use this 16-character password in your config
 
@@ -105,7 +109,7 @@ Add the following secrets to your GitHub repository:
 
 | Secret Name | Description |
 |-------------|-------------|
-| `ANTHROPIC_API_KEY` | Your Anthropic API key |
+| `OPENAI_API_KEY` | Your OpenAI API key |
 | `EMAIL_USERNAME` | SMTP username (email address) |
 | `EMAIL_PASSWORD` | SMTP password or app password |
 
@@ -118,7 +122,7 @@ Add the following secrets to your GitHub repository:
 ### Setting Secrets
 
 1. Go to your repository on GitHub
-2. Navigate to Settings → Secrets and variables → Actions
+2. Navigate to Settings > Secrets and variables > Actions
 3. Click "New repository secret"
 4. Add each required secret
 

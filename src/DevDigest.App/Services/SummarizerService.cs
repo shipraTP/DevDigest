@@ -14,17 +14,26 @@ public class SummarizerService : ISummarizerService
 {
     private readonly HttpClient _httpClient;
     private readonly string _apiKey;
+    private readonly string _model;
     private readonly ILogger<SummarizerService> _logger;
 
     public SummarizerService(HttpClient httpClient, DigestConfig config, ILogger<SummarizerService> logger)
     {
         _httpClient = httpClient;
-        _apiKey = config.Anthropic.ApiKey;
+        _apiKey = config.OpenAI.ApiKey;
+        _model = config.OpenAI.Model;
         _logger = logger;
     }
 
     public async Task<string> SummarizeCategoryAsync(string category, List<FeedItem> items, CancellationToken cancellationToken = default)
     {
+        // If no API key, return simple text summary
+        if (string.IsNullOrEmpty(_apiKey))
+        {
+            _logger.LogWarning("No OpenAI API key configured. Using basic summary.");
+            return GenerateBasicSummary(category, items);
+        }
+
         var itemsText = string.Join("\n", items.Select((item, index) =>
             $"{index + 1}. **{item.Title}**\n   URL: {item.Url}\n   Summary: {TruncateText(item.Summary, 200)}"));
 
@@ -40,21 +49,21 @@ Keep each bullet concise and informative, focusing on key takeaways for develope
 
         var request = new
         {
-            model = "claude-sonnet-4-6",
-            max_tokens = 1000,
+            model = _model,
             messages = new[]
             {
+                new { role = "system", content = "You are a helpful tech newsletter editor." },
                 new { role = "user", content = prompt }
-            }
+            },
+            max_tokens = 1000
         };
 
         var requestJson = JsonSerializer.Serialize(request);
         using var requestContent = new StringContent(requestJson, System.Text.Encoding.UTF8, "application/json");
 
-        using var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://api.anthropic.com/v1/messages");
+        using var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
         requestMessage.Content = requestContent;
         requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
-        requestMessage.Headers.Add("anthropic-version", "2023-06-01");
 
         using var response = await _httpClient.SendAsync(requestMessage, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -62,7 +71,19 @@ Keep each bullet concise and informative, focusing on key takeaways for develope
         var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
         var responseObj = JsonDocument.Parse(responseJson);
 
-        return responseObj.RootElement.GetProperty("content")[0].GetProperty("text").GetString() ?? "No summary available.";
+        return responseObj.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString() ?? "No summary available.";
+    }
+
+    private static string GenerateBasicSummary(string category, List<FeedItem> items)
+    {
+        var summaries = items.Take(5).Select(item =>
+            $"• {item.Title} - {TruncateText(item.Summary, 100)}").ToList();
+
+        return string.Join("\n", summaries);
     }
 
     private static string TruncateText(string text, int maxLength)

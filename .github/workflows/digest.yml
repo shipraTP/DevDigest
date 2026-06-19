@@ -39,7 +39,7 @@ jobs:
 
       - name: Run DevDigest
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         run: |
@@ -81,8 +81,9 @@ jobs:
                 }
               ]
             },
-            "Anthropic": {
-              "ApiKey": "$ANTHROPIC_API_KEY"
+            "OpenAI": {
+              "ApiKey": "$OPENAI_API_KEY",
+              "Model": "gpt-4o-mini"
             },
             "Email": {
               "SmtpHost": "smtp.gmail.com",

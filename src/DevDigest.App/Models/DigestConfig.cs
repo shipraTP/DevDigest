@@ -3,7 +3,7 @@ namespace DevDigest.App.Models;
 public class DigestConfig
 {
     public DigestSettings Digest { get; set; } = new();
-    public AnthropicSettings Anthropic { get; set; } = new();
+    public OpenAISettings OpenAI { get; set; } = new();
     public EmailSettings Email { get; set; } = new();
 }
 
@@ -21,9 +21,10 @@ public class CategoryConfig
     public List<string> Sources { get; set; } = new();
 }
 
-public class AnthropicSettings
+public class OpenAISettings
 {
     public string ApiKey { get; set; } = string.Empty;
+    public string Model { get; set; } = "gpt-4o-mini";
 }
 
 public class EmailSettings
