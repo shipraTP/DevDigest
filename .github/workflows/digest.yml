@@ -1,0 +1,96 @@
+name: DevDigest Daily Email
+
+on:
+  schedule:
+    # Run at 7am IST (1:30am UTC) daily
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: false
+        default: 'warning'
+        type: choice
+        options:
+          - info
+          - warning
+          - error
+
+permissions:
+  contents: read
+
+jobs:
+  send-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore src/DevDigest.App/DevDigest.App.csproj
+
+      - name: Build
+        run: dotnet build src/DevDigest.App/DevDigest.App.csproj --configuration Release --no-restore
+
+      - name: Run DevDigest
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        run: |
+          # Update appsettings.json with secrets
+          cat > src/DevDigest.App/appsettings.json << EOF
+          {
+            "Digest": {
+              "ToEmail": "${{ vars.DIGEST_TO_EMAIL }}",
+              "MaxItemsPerCategory": 10,
+              "Categories": [
+                {
+                  "Name": "HLD",
+                  "Enabled": true,
+                  "Sources": [
+                    "https://learn.microsoft.com/en-us/blog/rss.xml",
+                    "https://aws.amazon.com/blogs/architecture/feed/"
+                  ]
+                },
+                {
+                  "Name": "DSA",
+                  "Enabled": true,
+                  "Sources": [
+                    "https://cp-algorithms.com/rss.xml"
+                  ]
+                },
+                {
+                  "Name": "Tech News",
+                  "Enabled": true,
+                  "Sources": [
+                    "https://hacker-news.firebaseio.com/v0/topstories.json"
+                  ]
+                },
+                {
+                  "Name": "GitHub Trends",
+                  "Enabled": true,
+                  "Sources": [
+                    "https://github.com/blog.atom"
+                  ]
+                }
+              ]
+            },
+            "Anthropic": {
+              "ApiKey": "$ANTHROPIC_API_KEY"
+            },
+            "Email": {
+              "SmtpHost": "smtp.gmail.com",
+              "SmtpPort": 587,
+              "Username": "$EMAIL_USERNAME",
+              "Password": "$EMAIL_PASSWORD"
+            }
+          }
+          EOF
+          
+          dotnet run --project src/DevDigest.App/DevDigest.App.csproj --configuration Release
