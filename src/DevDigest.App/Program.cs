@@ -71,8 +71,19 @@ class Program
         var services = new ServiceCollection();
 
         // Load configuration from appsettings.json
+        // Use the application's base directory (where the DLL is located)
+        var appBasePath = AppContext.BaseDirectory;
+        var configPath = Path.Combine(appBasePath, "appsettings.json");
+        
+        // Fallback to current directory if not found in base directory
+        if (!File.Exists(configPath))
+        {
+            appBasePath = Directory.GetCurrentDirectory();
+            configPath = Path.Combine(appBasePath, "appsettings.json");
+        }
+        
         var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
+            .SetBasePath(appBasePath)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .Build();
 
