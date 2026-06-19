@@ -79,7 +79,7 @@ jobs:
               "Model": "gpt-4o-mini"
             },
             "Email": {
-              "SmtpHost": "smtp.gmail.com",
+              "SmtpHost": "smtp.office365.com",
               "SmtpPort": 587,
               "Username": "$EMAIL_USERNAME",
               "Password": "$EMAIL_PASSWORD"
