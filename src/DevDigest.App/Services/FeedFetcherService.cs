@@ -58,7 +58,15 @@ public class FeedFetcherService : IFeedFetcherService
         response.EnsureSuccessStatusCode();
 
         using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var reader = XmlReader.Create(stream);
+        
+        // Configure XmlReader to allow DTD processing for feeds that require it
+        var settings = new XmlReaderSettings
+        {
+            DtdProcessing = DtdProcessing.Parse,
+            ValidationType = ValidationType.None
+        };
+        
+        using var reader = XmlReader.Create(stream, settings);
 
         var feed = SyndicationFeed.Load(reader);
 

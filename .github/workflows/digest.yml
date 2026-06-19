@@ -69,7 +69,7 @@ jobs:
                   "Name": "GitHub Trends",
                   "Enabled": true,
                   "Sources": [
-                    "https://github.com/blog.atom"
+                    "https://github-trending-api.43z.win/atom"
                   ]
                 }
               ]
