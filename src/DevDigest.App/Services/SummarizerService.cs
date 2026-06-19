@@ -59,23 +59,59 @@ Keep each bullet concise and informative, focusing on key takeaways for develope
         };
 
         var requestJson = JsonSerializer.Serialize(request);
-        using var requestContent = new StringContent(requestJson, System.Text.Encoding.UTF8, "application/json");
+        
+        // Retry logic for rate limiting
+        var maxRetries = 3;
+        var retryDelay = 5000; // 5 seconds
+        
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            try
+            {
+                using var requestContent = new StringContent(requestJson, System.Text.Encoding.UTF8, "application/json");
 
-        using var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
-        requestMessage.Content = requestContent;
-        requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+                using var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
+                requestMessage.Content = requestContent;
+                requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
 
-        using var response = await _httpClient.SendAsync(requestMessage, cancellationToken);
-        response.EnsureSuccessStatusCode();
+                using var response = await _httpClient.SendAsync(requestMessage, cancellationToken);
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                {
+                    _logger.LogWarning("OpenAI rate limit hit. Waiting {Delay}ms before retry...", retryDelay);
+                    await Task.Delay(retryDelay, cancellationToken);
+                    retryDelay *= 2; // Exponential backoff
+                    continue;
+                }
+                
+                response.EnsureSuccessStatusCode();
 
-        var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
-        var responseObj = JsonDocument.Parse(responseJson);
+                var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                var responseObj = JsonDocument.Parse(responseJson);
 
-        return responseObj.RootElement
-            .GetProperty("choices")[0]
-            .GetProperty("message")
-            .GetProperty("content")
-            .GetString() ?? "No summary available.";
+                return responseObj.RootElement
+                    .GetProperty("choices")[0]
+                    .GetProperty("message")
+                    .GetProperty("content")
+                    .GetString() ?? "No summary available.";
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            {
+                if (attempt < maxRetries - 1)
+                {
+                    _logger.LogWarning("OpenAI rate limit hit. Waiting {Delay}ms before retry...", retryDelay);
+                    await Task.Delay(retryDelay, cancellationToken);
+                    retryDelay *= 2;
+                }
+                else
+                {
+                    _logger.LogWarning("Max retries reached. Using basic summary instead.");
+                    return GenerateBasicSummary(category, items);
+                }
+            }
+        }
+        
+        return GenerateBasicSummary(category, items);
     }
 
     private static string GenerateBasicSummary(string category, List<FeedItem> items)

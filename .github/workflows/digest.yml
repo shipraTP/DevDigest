@@ -47,7 +47,7 @@ jobs:
                   "Name": "HLD",
                   "Enabled": true,
                   "Sources": [
-                    "https://learn.microsoft.com/en-us/blog/rss.xml",
+                    "https://devblogs.microsoft.com/visualstudio/feed/",
                     "https://aws.amazon.com/blogs/architecture/feed/"
                   ]
                 },
