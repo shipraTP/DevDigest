@@ -34,9 +34,8 @@ jobs:
       - name: Create appsettings.json
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
-          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-          GRAPH_CLIENT_ID: ${{ secrets.GRAPH_CLIENT_ID }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          SENDGRID_FROM_EMAIL: ${{ vars.SENDGRID_FROM_EMAIL }}
         run: |
           cat > src/DevDigest.App/appsettings.json << EOF
           {
@@ -79,14 +78,9 @@ jobs:
               "ApiKey": "$OPENAI_API_KEY",
               "Model": "gpt-4o-mini"
             },
-            "Graph": {
-              "ClientId": "$GRAPH_CLIENT_ID"
-            },
-            "Email": {
-              "SmtpHost": "smtp.office365.com",
-              "SmtpPort": 587,
-              "Username": "$EMAIL_USERNAME",
-              "Password": "$EMAIL_PASSWORD"
+            "SendGrid": {
+              "ApiKey": "$SENDGRID_API_KEY",
+              "FromEmail": "$SENDGRID_FROM_EMAIL"
             }
           }
           EOF

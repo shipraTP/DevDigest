@@ -4,8 +4,7 @@ public class DigestConfig
 {
     public DigestSettings Digest { get; set; } = new();
     public OpenAISettings OpenAI { get; set; } = new();
-    public EmailSettings Email { get; set; } = new();
-    public GraphSettings Graph { get; set; } = new();
+    public SendGridSettings SendGrid { get; set; } = new();
 }
 
 public class DigestSettings
@@ -28,15 +27,8 @@ public class OpenAISettings
     public string Model { get; set; } = "gpt-4o-mini";
 }
 
-public class GraphSettings
+public class SendGridSettings
 {
-    public string ClientId { get; set; } = string.Empty;
-}
-
-public class EmailSettings
-{
-    public string SmtpHost { get; set; } = string.Empty;
-    public int SmtpPort { get; set; } = 587;
-    public string Username { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
+    public string ApiKey { get; set; } = string.Empty;
+    public string FromEmail { get; set; } = string.Empty;
 }

@@ -12,93 +12,58 @@ public interface IDeliveryService
 
 public class DeliveryService : IDeliveryService
 {
-    private readonly EmailSettings _emailSettings;
-    private readonly DigestConfig _config;
+    private readonly SendGridSettings _sendGridSettings;
     private readonly ILogger<DeliveryService> _logger;
     private readonly HttpClient _httpClient;
 
     public DeliveryService(HttpClient httpClient, DigestConfig config, ILogger<DeliveryService> logger)
     {
         _httpClient = httpClient;
-        _config = config;
-        _emailSettings = config.Email;
+        _sendGridSettings = config.SendGrid;
         _logger = logger;
     }
 
     public async Task SendDigestEmailAsync(string toEmail, Dictionary<string, string> categorySummaries, CancellationToken cancellationToken = default)
     {
-        // Get access token using password grant flow
-        var accessToken = await GetAccessTokenAsync(cancellationToken);
-        
-        if (string.IsNullOrEmpty(accessToken))
+        if (string.IsNullOrEmpty(_sendGridSettings.ApiKey))
         {
-            throw new Exception("Failed to obtain access token for Microsoft Graph API");
+            _logger.LogWarning("No SendGrid API key configured. Skipping email delivery.");
+            return;
         }
 
         var htmlBody = GenerateHtmlEmail(categorySummaries);
-        
-        // Send email via Microsoft Graph API
+        var subject = $"DevDigest - {DateTime.UtcNow:MMMM dd, yyyy}";
+
         var request = new
         {
-            message = new
+            personalizations = new[]
             {
-                subject = $"DevDigest - {DateTime.UtcNow:MMMM dd, yyyy}",
-                body = new { contentType = "HTML", content = htmlBody },
-                toRecipients = new[]
-                {
-                    new { emailAddress = new { address = toEmail } }
-                }
+                new { to = new[] { new { email = toEmail } } }
             },
-            saveToSentItems = true
+            from = new { email = _sendGridSettings.FromEmail, name = "DevDigest" },
+            subject = subject,
+            content = new[]
+            {
+                new { type = "text/html", value = htmlBody }
+            }
         };
 
         var requestJson = JsonSerializer.Serialize(request);
         using var content = new StringContent(requestJson, System.Text.Encoding.UTF8, "application/json");
 
-        using var message = new HttpRequestMessage(HttpMethod.Post, "https://graph.microsoft.com/v1.0/me/sendMail");
+        using var message = new HttpRequestMessage(HttpMethod.Post, "https://api.sendgrid.com/v3/mail/send");
         message.Content = content;
-        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _sendGridSettings.ApiKey);
 
         using var response = await _httpClient.SendAsync(message, cancellationToken);
         
         if (!response.IsSuccessStatusCode)
         {
             var error = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new Exception($"Failed to send email via Graph API: {error}");
+            throw new Exception($"Failed to send email via SendGrid: {error}");
         }
 
         _logger.LogInformation("Digest email sent successfully to {ToEmail}", toEmail);
-    }
-
-    private async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)
-    {
-        var tokenUrl = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
-        
-        var body = new Dictionary<string, string>
-        {
-            { "client_id", _config.Graph.ClientId },
-            { "scope", "https://graph.microsoft.com/.default" },
-            { "client_secret", _emailSettings.Password },
-            { "username", _emailSettings.Username },
-            { "password", _emailSettings.Password }
-        };
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, tokenUrl);
-        request.Content = new FormUrlEncodedContent(body);
-
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
-        
-        if (!response.IsSuccessStatusCode)
-        {
-            var error = await response.Content.ReadAsStringAsync(cancellationToken);
-            _logger.LogError("Failed to get access token: {Error}", error);
-            return string.Empty;
-        }
-
-        var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        using var doc = JsonDocument.Parse(json);
-        
-        return doc.RootElement.GetProperty("access_token").GetString() ?? string.Empty;
     }
 
     private static string GenerateHtmlEmail(Dictionary<string, string> categorySummaries)
