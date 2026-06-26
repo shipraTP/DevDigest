@@ -35,17 +35,23 @@ public class SummarizerService : ISummarizerService
         }
 
         var itemsText = string.Join("\n", items.Select((item, index) =>
-            $"{index + 1}. **{item.Title}**\n   Link: {item.Url}\n   Summary: {TruncateText(item.Summary, 200)}"));
+            $"Title: {item.Title}\nURL: {item.Url}\nSummary: {TruncateText(item.Summary, 300)}\n---"));
 
-        var prompt = $@"You are a tech newsletter editor. Create a 5-bullet-point summary of the following {category} articles for a developer digest.
+        var prompt = $@"You are a senior developer writing a concise daily digest for fellow developers.
 
-Articles:
-{itemsText}
+Create a well-structured summary of these {category} articles with:
+1. A brief intro sentence about what's trending in {category}
+2. 3-5 key highlights, each as a short paragraph (2-3 sentences) with:
+   - What the news/story is about
+   - Why it matters to developers
+   - A clear takeaway or action item
+   
+Format each highlight as:
+**[Headline/Topic]**
+Explanation of the news and why it matters. Key takeaway for developers.
+🔗 [Read More](URL)
 
-Provide exactly 5 bullet points that capture the most important highlights. Format each bullet as:
-• [Brief insightful summary] - [Source Title](URL)
-
-Keep each bullet concise and informative, focusing on key takeaways for developers. Include the URL as a markdown link so readers can click to read more.";
+Keep tone professional but friendly. Focus on actionable insights developers can use.";
 
         var request = new
         {
@@ -116,10 +122,11 @@ Keep each bullet concise and informative, focusing on key takeaways for develope
 
     private static string GenerateBasicSummary(string category, List<FeedItem> items)
     {
-        var summaries = items.Take(5).Select(item =>
-            $"• [{item.Title}]({item.Url}) - {TruncateText(item.Summary, 100)}").ToList();
+        var summaries = items.Take(5).Select(item => $@"## {TruncateText(item.Title, 80)}
+{TruncateText(item.Summary, 150)}
+🔗 [{item.Url}]({item.Url})").ToList();
 
-        return string.Join("\n", summaries);
+        return string.Join("\n\n", summaries);
     }
 
     private static string TruncateText(string text, int maxLength)
