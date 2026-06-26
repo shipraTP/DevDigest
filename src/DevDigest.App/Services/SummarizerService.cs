@@ -35,23 +35,37 @@ public class SummarizerService : ISummarizerService
         }
 
         var itemsText = string.Join("\n", items.Select((item, index) =>
-            $"Title: {item.Title}\nURL: {item.Url}\nSummary: {TruncateText(item.Summary, 300)}\n---"));
+            $"Title: {item.Title}\nURL: {item.Url}\nSummary: {TruncateText(item.Summary, 400)}\n---"));
 
-        var prompt = $@"You are a senior developer writing a concise daily digest for fellow developers.
+        var prompt = $@"You are a senior developer writing a daily newsletter for fellow developers.
 
-Create a well-structured summary of these {category} articles with:
-1. A brief intro sentence about what's trending in {category}
-2. 3-5 key highlights, each as a short paragraph (2-3 sentences) with:
-   - What the news/story is about
-   - Why it matters to developers
-   - A clear takeaway or action item
-   
-Format each highlight as:
-**[Headline/Topic]**
-Explanation of the news and why it matters. Key takeaway for developers.
-🔗 [Read More](URL)
+Create a comprehensive summary of these {category} articles with these sections:
 
-Keep tone professional but friendly. Focus on actionable insights developers can use.";
+## TL;DR
+One sentence overview of the most important thing in this category today.
+
+## Top Stories (3-5 items)
+For each story, provide:
+- A clear headline/title
+- 2-3 sentences explaining what happened and why it matters
+- One specific takeaway or action item developers should know
+- A link: 🔗 [Read More](URL)
+
+## 💡 Quick Tip
+A useful {category}-related tip, trick, or productivity hack developers can use today.
+
+## 🛠️ Tool of the Day
+One useful tool, library, or resource related to {category} that developers should know about. Include the tool name, what it does, and a link.
+
+## 📌 Code Snippet (if any article contains code)
+Include a relevant code example from the articles. Format as:
+```
+// Language and context
+code here
+```
+Include brief comments explaining what the code does and when to use it.
+
+Keep tone professional but friendly. Focus on actionable insights developers can use immediately.";
 
         var request = new
         {
@@ -123,10 +137,34 @@ Keep tone professional but friendly. Focus on actionable insights developers can
     private static string GenerateBasicSummary(string category, List<FeedItem> items)
     {
         var summaries = items.Take(5).Select(item => $@"## {TruncateText(item.Title, 80)}
-{TruncateText(item.Summary, 150)}
-🔗 [{item.Url}]({item.Url})").ToList();
+{TruncateText(item.Summary, 200)}
+🔗 [{GetDomain(item.Url)}]({item.Url})").ToList();
 
-        return string.Join("\n\n", summaries);
+        return $@"## TL;DR
+Latest updates in {category} - {items.Count} articles curated for you.
+
+## Top Stories
+{string.Join("\n\n", summaries)}
+
+## 💡 Quick Tip
+Check out the full articles for detailed insights and code examples.
+
+## 🛠️ Tool Suggestion
+Explore the linked resources to discover new tools and libraries in the {category} space.";
+
+    }
+
+    private static string GetDomain(string url)
+    {
+        try
+        {
+            var uri = new Uri(url);
+            return uri.Host.Replace("www.", "");
+        }
+        catch
+        {
+            return "Source";
+        }
     }
 
     private static string TruncateText(string text, int maxLength)

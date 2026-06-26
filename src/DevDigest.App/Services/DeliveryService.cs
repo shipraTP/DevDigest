@@ -148,24 +148,74 @@ public class DeliveryService : IDeliveryService
     {
         if (string.IsNullOrEmpty(markdown)) return string.Empty;
         
-        // Convert markdown links to HTML
+        // Convert code blocks first (before other processing)
         var html = System.Text.RegularExpressions.Regex.Replace(
             markdown,
+            @"```[\w]*\n?([\s\S]*?)```",
+            "<pre style='background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; font-family: Monaco, Consolas, monospace; font-size: 13px; line-height: 1.6; margin: 16px 0;'><code>$1</code></pre>",
+            System.Text.RegularExpressions.RegexOptions.Multiline
+        );
+        
+        // Convert TL;DR section
+        html = System.Text.RegularExpressions.Regex.Replace(
+            html,
+            @"## TL;DR\s*\n+(.+)",
+            "<div style='background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 16px; border-radius: 8px; margin: 16px 0;'><strong style='color: #92400e;'>💡 TL;DR</strong><p style='color: #78350f; margin: 8px 0 0 0;'>$1</p></div>",
+            System.Text.RegularExpressions.RegexOptions.Multiline
+        );
+        
+        // Convert Quick Tip section
+        html = System.Text.RegularExpressions.Regex.Replace(
+            html,
+            @"## 💡 Quick Tip\s*\n+(.+)",
+            "<div style='background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-left: 4px solid #3b82f6; padding: 16px; border-radius: 8px; margin: 16px 0;'><strong style='color: #1e40af;'>💡 Quick Tip</strong><p style='color: #1e3a8a; margin: 8px 0 0 0;'>$1</p></div>",
+            System.Text.RegularExpressions.RegexOptions.Multiline
+        );
+        
+        // Convert Tool of the Day section
+        html = System.Text.RegularExpressions.Regex.Replace(
+            html,
+            @"## 🛠️ Tool of the Day\s*\n+(.+)",
+            "<div style='background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-left: 4px solid #10b981; padding: 16px; border-radius: 8px; margin: 16px 0;'><strong style='color: #065f46;'>🛠️ Tool of the Day</strong><div style='color: #064e3b; margin: 8px 0 0 0;'>$1</div></div>",
+            System.Text.RegularExpressions.RegexOptions.Multiline
+        );
+        
+        // Convert Code Snippet section
+        html = System.Text.RegularExpressions.Regex.Replace(
+            html,
+            @"## 📌 Code Snippet\s*\n+(.+)",
+            "<div style='background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; margin: 16px 0;'><strong style='color: #475569;'>📌 Code Snippet</strong><div style='margin-top: 8px;'>$1</div></div>",
+            System.Text.RegularExpressions.RegexOptions.Multiline
+        );
+        
+        // Convert ## Top Stories header
+        html = System.Text.RegularExpressions.Regex.Replace(
+            html,
+            @"## Top Stories\s*\n*",
+            "<h3 style='color: #1e293b; font-size: 18px; margin: 24px 0 16px 0; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;'>📰 Top Stories</h3>",
+            System.Text.RegularExpressions.RegexOptions.Multiline
+        );
+        
+        // Convert ## headers to h3
+        html = System.Text.RegularExpressions.Regex.Replace(
+            html,
+            @"^## (.+)$",
+            "<h3 style='color: #334155; margin: 20px 0 10px 0; font-size: 16px;'>📌 $1</h3>",
+            System.Text.RegularExpressions.RegexOptions.Multiline
+        );
+        
+        // Convert markdown links to styled HTML
+        html = System.Text.RegularExpressions.Regex.Replace(
+            html,
             @"\[([^\]]+)\]\(([^)]+)\)",
-            "<a href='$2' style='color: #667eea; text-decoration: none; font-weight: 500;'>$1 →</a>"
+            "<a href='$2' style='display: inline-block; background: #667eea; color: white; padding: 4px 12px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: 500; margin-top: 8px;'>🔗 Read More</a>"
         );
         
         // Convert bold
         html = System.Text.RegularExpressions.Regex.Replace(html, @"\*\*(.+?)\*\*", "<strong style='color: #1a1a2e;'>$1</strong>");
         
-        // Convert headers (## style)
-        html = System.Text.RegularExpressions.Regex.Replace(html, @"^## (.+)$", "<h3 style='color: #334155; margin: 16px 0 8px 0; font-size: 16px;'>$1</h3>", System.Text.RegularExpressions.RegexOptions.Multiline);
-        
-        // Convert bullet points
-        html = System.Text.RegularExpressions.Regex.Replace(html, @"^• ", "<span style='display: block; margin: 8px 0; padding-left: 12px; border-left: 3px solid #667eea;'>", System.Text.RegularExpressions.RegexOptions.Multiline);
-        
-        // Convert newlines to paragraphs
-        html = html.Replace("\n\n", "</span><br><br>").Replace("\n", "<br>");
+        // Convert newlines
+        html = html.Replace("\n\n", "</p><p style='margin: 8px 0;'>").Replace("\n", "<br>");
         
         return html;
     }

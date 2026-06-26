@@ -41,35 +41,45 @@ jobs:
           {
             "Digest": {
               "ToEmail": "${{ vars.DIGEST_TO_EMAIL }}",
-              "MaxItemsPerCategory": 10,
+              "MaxItemsPerCategory": 8,
               "Categories": [
                 {
-                  "Name": "HLD",
+                  "Name": "🏗️ Architecture & System Design",
                   "Enabled": true,
                   "Sources": [
                     "https://devblogs.microsoft.com/visualstudio/feed/",
-                    "https://aws.amazon.com/blogs/architecture/feed/"
+                    "https://aws.amazon.com/blogs/architecture/feed/",
+                    "https://martinfowler.com/feed.rss"
                   ]
                 },
                 {
-                  "Name": "DSA",
+                  "Name": "🧮 Algorithms & Problem Solving",
                   "Enabled": true,
                   "Sources": [
                     "https://cp-algorithms.com/rss.xml"
                   ]
                 },
                 {
-                  "Name": "Tech News",
+                  "Name": "📰 Tech News & Trends",
                   "Enabled": true,
                   "Sources": [
-                    "https://hacker-news.firebaseio.com/v0/topstories.json"
+                    "https://hacker-news.firebaseio.com/v0/topstories.json",
+                    "https://dev.to/feed"
                   ]
                 },
                 {
-                  "Name": "GitHub Trends",
+                  "Name": "🔥 Trending on GitHub",
                   "Enabled": true,
                   "Sources": [
                     "https://github-trending-api.43z.win/atom"
+                  ]
+                },
+                {
+                  "Name": "🎨 Frontend & Web Dev",
+                  "Enabled": true,
+                  "Sources": [
+                    "https://css-tricks.com/feed/",
+                    "https://javascriptweekly.com/issues"
                   ]
                 }
               ]
