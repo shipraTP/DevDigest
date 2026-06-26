@@ -35,7 +35,7 @@ public class SummarizerService : ISummarizerService
         }
 
         var itemsText = string.Join("\n", items.Select((item, index) =>
-            $"{index + 1}. **{item.Title}**\n   URL: {item.Url}\n   Summary: {TruncateText(item.Summary, 200)}"));
+            $"{index + 1}. **{item.Title}**\n   Link: {item.Url}\n   Summary: {TruncateText(item.Summary, 200)}"));
 
         var prompt = $@"You are a tech newsletter editor. Create a 5-bullet-point summary of the following {category} articles for a developer digest.
 
@@ -43,9 +43,9 @@ Articles:
 {itemsText}
 
 Provide exactly 5 bullet points that capture the most important highlights. Format each bullet as:
-• [Brief insightful summary of the topic] (Source: source-name)
+• [Brief insightful summary] - [Source Title](URL)
 
-Keep each bullet concise and informative, focusing on key takeaways for developers.";
+Keep each bullet concise and informative, focusing on key takeaways for developers. Include the URL as a markdown link so readers can click to read more.";
 
         var request = new
         {
@@ -117,7 +117,7 @@ Keep each bullet concise and informative, focusing on key takeaways for develope
     private static string GenerateBasicSummary(string category, List<FeedItem> items)
     {
         var summaries = items.Take(5).Select(item =>
-            $"• {item.Title} - {TruncateText(item.Summary, 100)}").ToList();
+            $"• [{item.Title}]({item.Url}) - {TruncateText(item.Summary, 100)}").ToList();
 
         return string.Join("\n", summaries);
     }
